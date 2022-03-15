@@ -1,0 +1,16 @@
+steps:
+  - name: 'us-docker.pkg.dev/master-repo-aku-project-322817/us-docker-repo/devcontainer'
+    id: 'build'
+    entrypoint: bash
+    dir: 'DataEngineering/Dataflow/healthcare-data-harmonization-dataflow'
+    args:
+      - '-c'
+      - |
+        gradle wrapper --gradle-version 6.7.1
+        ./gradlew shadowJar -PmainClass=com.google.cloud.healthcare.etl.runner.omoptofhir.OmopToFhirBatchRunner
+        gcloud dataflow flex-template build $_TEMPLATE_PATH --image-gcr-path "$_TEMPLATE_IMAGE" --sdk-language "JAVA" --flex-template-base-image JAVA11 --metadata-file "omop_fhir_dataflow_metadata.json" --jar "build/libs/converter-0.1.0-all.jar" --env FLEX_TEMPLATE_JAVA_MAIN_CLASS="com.google.cloud.healthcare.etl.runner.omoptofhir.OmopToFhirBatchRunner"
+
+substitutions:
+  _TEMPLATE_IMAGE: gcr.io/mw-data-analytics-sandbox/healthcare/omap-to-fhir:latest
+  _TEMPLATE_PATH: gs://omop_test/omap-to-fhir
+timeout: 1500s
