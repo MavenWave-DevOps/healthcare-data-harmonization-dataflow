@@ -11,7 +11,7 @@ steps:
 
 substitutions:
   _TEMPLATE_IMAGE: gcr.io/mw-data-analytics-sandbox/healthcare/omap-to-fhir:latest
-  _TEMPLATE_PATH: gs://omop_test/omap-to-fhir_phil
+  _TEMPLATE_PATH: gs://omop_test/omap-to-fhir-phil
 timeout: 1500s
 logsBucket: 'gs://mw-hdh-cloudbuild-logs-bucket'
 
