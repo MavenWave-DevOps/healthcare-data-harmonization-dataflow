@@ -2,7 +2,6 @@ steps:
   - name: 'us-central1-docker.pkg.dev/mw-data-analytics-sandbox/hdh-image-repo/hdhbuildcontainer@sha256:1c8d39e2e5745e6dd3500dd258551c028cc4b89430a15d70240095f2469228cf'
     id: 'build'
     entrypoint: bash
-    dir: 'DataEngineering/Dataflow/healthcare-data-harmonization-dataflow'
     args:
       - '-c'
       - |
