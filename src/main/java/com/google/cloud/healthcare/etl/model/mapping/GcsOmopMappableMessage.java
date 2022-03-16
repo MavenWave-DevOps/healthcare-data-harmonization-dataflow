@@ -14,13 +14,13 @@
 package com.google.cloud.healthcare.etl.model.mapping;
 
 /**
- * Represents OMOP metadata from the HCLS API for mapping. This class is meant to wrap the original
- * response from the API to be consumed by the mapping library. The ID is unused in this class.
+ * Represents OMOP data from the GCS bucket for mapping. This class is meant to wrap the original
+ * response from the GCS to be consumed by the mapping library. The ID is unused in this class.
  */
-public class HclsApiOmopMappableMessage implements Mappable {
+public class GcsOmopMappableMessage implements Mappable {
   private final String schematizedData;
 
-  public HclsApiOmopMappableMessage(String schematizedData) {
+  public GcsOmopMappableMessage(String schematizedData) {
     this.schematizedData = schematizedData;
   }
 
@@ -32,7 +32,7 @@ public class HclsApiOmopMappableMessage implements Mappable {
     return this.schematizedData;
   }
 
-  public static HclsApiOmopMappableMessage from(String data) {
-    return new HclsApiOmopMappableMessage(data);
+  public static GcsOmopMappableMessage from(String data) {
+    return new GcsOmopMappableMessage(data);
   }
 }

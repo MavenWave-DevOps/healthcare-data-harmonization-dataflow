@@ -22,9 +22,6 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.TextIO;
@@ -131,12 +128,6 @@ public class OmopToFhirBatchRunner {
         Integer getErrorLogShardNum();
 
         void setErrorLogShardNum(Integer shardNum);
-
-        @Description("Whether enable metrics for performance evaluation.")
-        @Default.Boolean(false)
-        Boolean getEnablePerformanceMetrics();
-
-        void setEnablePerformanceMetrics(Boolean enablePerformanceMetrics);
     }
 
     /**
@@ -231,16 +222,16 @@ public class OmopToFhirBatchRunner {
     private PCollection<String> mapOmopToFhirResource(
             PCollection<String> omopData, Options options) {
 
-        MappingFn<HclsApiOmopMappableMessage> mappingFn =
+        MappingFn<GcsOmopMappableMessage> mappingFn =
                 MappingFn.of(options.getMappingPath(), false);
 
         PCollectionTuple mapOmopToFhirBundleRequest =
                 omopData
                         .apply(ParDo.of(new CreateMappingFnInput()))
                         .apply(
-                                MapElements.into(TypeDescriptor.of(HclsApiOmopMappableMessage.class))
-                                        .via(HclsApiOmopMappableMessage::from))
-                        .setCoder(HclsApiOmopMappableMessageCoder.of())
+                                MapElements.into(TypeDescriptor.of(GcsOmopMappableMessage.class))
+                                        .via(GcsOmopMappableMessage::from))
+                        .setCoder(GcsOmopMappableMessageCoder.of())
                         .apply(
                                 "MapMessages",
                                 ParDo.of(mappingFn)
