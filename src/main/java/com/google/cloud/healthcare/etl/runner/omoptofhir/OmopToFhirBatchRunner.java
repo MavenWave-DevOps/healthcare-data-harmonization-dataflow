@@ -146,7 +146,6 @@ public class OmopToFhirBatchRunner {
      * reformat it to be consumed by the mapping library.
      */
     static class CreateMappingFnInput extends DoFn<String, String> {
-        public static final Gson gson = new Gson();
 
         @ProcessElement
         public void processElement(DoFn<String, String>.ProcessContext context) {
@@ -156,24 +155,22 @@ public class OmopToFhirBatchRunner {
             String objectName = getObjectName(gcsBlobPath);
             byte[] input = storage.readAllBytes(bucketName, objectName);
             String jsonContent = new String(input);
-            JsonObject jsonObject = gson.fromJson(jsonContent, JsonObject.class);
-            LOG.info("content of " + gcsBlobPath + " as follows");
-            LOG.info("jsonContent " + jsonContent);
-            LOG.info("gson.toJson " + gson.toJson(jsonObject));
-
-            context.output(gson.toJson(jsonObject));
+            context.output(jsonContent);
         }
     }
 
     static class WriteFnOutput extends DoFn<String, String> {
+        private String outputDirectory;
+        public WriteFnOutput(String outputDirectory) {
+            this.outputDirectory = outputDirectory;
+        }
 
         @ProcessElement
         public void processElement(ProcessContext context) {
             Storage storage = StorageOptions.newBuilder().build().getService();
             String json = context.element();
-            String outputFolder = "gs://omop_test/omop/output/";
-            String bucketName = getBucketName(outputFolder);
-            String folderPath = getObjectName(outputFolder);
+            String bucketName = getBucketName(outputDirectory);
+            String folderPath = getObjectName(outputDirectory);
 
             BlobId blobId = BlobId.of(bucketName, folderPath + System.currentTimeMillis() + ".json");
             BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
@@ -329,13 +326,12 @@ public class OmopToFhirBatchRunner {
                                 .via(
                                         (FileIO.ReadableFile file) -> {
                                             String fileName = file.getMetadata().resourceId().toString();
-//                                            System.out.println("Fanning out files -> " + fileName);
                                             return fileName;
                                         }));
 
         PCollection<String> fhirResource =
                 runner.mapOmopToFhirResource(studyMetadata, options)
-                        .apply("write to bucket", ParDo.of(new WriteFnOutput()));
+                        .apply("Write to Bucket", ParDo.of(new WriteFnOutput(options.getOutputDirectory())));
         runner.writeToFhirStore(fhirResource, options);
 
         pipeline.run();
