@@ -1,25 +1,25 @@
 library_config: {
   user_libraries: {
     type: MAPPING_LANGUAGE
-    path: { gcs_location: "gs://omop_test/mapping_configs/omop_fhir_r4/projector_library/entities.wstl" }
+    path: { gcs_location: "gs://BUCKET_NAME/mapping_configs/omop_fhir_r4/projector_library/entities.wstl" }
   },
   user_libraries: {
     type: MAPPING_LANGUAGE
-    path: { gcs_location: "gs://omop_test/mapping_configs/omop_fhir_r4/projector_library/postprocess.wstl" }
+    path: { gcs_location: "gs://BUCKET_NAME/mapping_configs/omop_fhir_r4/projector_library/postprocess.wstl" }
   },
   user_libraries: {
     type: MAPPING_LANGUAGE
-    path: { gcs_location: "gs://omop_test/mapping_configs/omop_fhir_r4/projector_library/process_entities.wstl" }
+    path: { gcs_location: "gs://BUCKET_NAME/mapping_configs/omop_fhir_r4/projector_library/process_entities.wstl" }
   },
   user_libraries: {
     type: MAPPING_LANGUAGE
-    path: { gcs_location: "gs://omop_test/mapping_configs/omop_fhir_r4/projector_library/omop_fhir.wstl" }
+    path: { gcs_location: "gs://BUCKET_NAME/mapping_configs/omop_fhir_r4/projector_library/omop_fhir.wstl" }
   }
 }
 
 harmonization_config: {
   code_lookup: {
-    gcs_location: "gs://omop_test/mapping_configs/omop_fhir_r4/code_harmonization/OMOP-FHIR-ConceptMap.harmonization.json"
+    gcs_location: "gs://BUCKET_NAME/mapping_configs/omop_fhir_r4/code_harmonization/OMOP-FHIR-ConceptMap.harmonization.json"
   }
 }
 
@@ -27,7 +27,7 @@ structure_mapping_config: {
   mapping_path_config: {
     mapping_type: MAPPING_LANGUAGE
     mapping_config_path: {
-      gcs_location: "gs://omop_test/mapping_configs/omop_fhir_r4/configurations/main.wstl"
+      gcs_location: "gs://BUCKET_NAME/mapping_configs/omop_fhir_r4/configurations/main.wstl"
     }
   }
 }

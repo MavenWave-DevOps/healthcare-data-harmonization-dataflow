@@ -22,9 +22,6 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.TextIO;
@@ -53,13 +50,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 /**
- * The entry point of the pipeline. It will be triggered upon receiving a PubSub message from the
- * given subscription. From the message, it will extract the webpath of a OMOP instance and collect
- * it's metadata from OMOP IO. With the response, it will map the study metadata to a FHIR
- * ImagingStudyResource and upload it to the given FHIR store.
+ * The entry point of the pipeline. It will read the OMOP data from GCS bucket. With the GCS file data,
+ * it will map to a FHIR and upload it to the given FHIR store.
  *
  * <p>The errors for each component are handled separately, e.g. you can specify file paths for each
- * stage (read - OMOP IO, mapping, write - FHIR IO).
+ * stage (read - OMOP, mapping, write - FHIR IO).
  */
 public class OmopToFhirBatchRunner {
 
@@ -133,20 +128,12 @@ public class OmopToFhirBatchRunner {
         Integer getErrorLogShardNum();
 
         void setErrorLogShardNum(Integer shardNum);
-
-        @Description("Whether enable metrics for performance evaluation.")
-        @Default.Boolean(false)
-        Boolean getEnablePerformanceMetrics();
-
-        void setEnablePerformanceMetrics(Boolean enablePerformanceMetrics);
     }
 
     /**
-     * A DoFn that will take the response of the Study Metadata Read call from the DICOM API and
-     * reformat it to be consumed by the mapping library.
+     * A DoFn that will take the GCS path and read OMOP data to be consumed by the mapping library.
      */
     static class CreateMappingFnInput extends DoFn<String, String> {
-        public static final Gson gson = new Gson();
 
         @ProcessElement
         public void processElement(DoFn<String, String>.ProcessContext context) {
@@ -156,24 +143,22 @@ public class OmopToFhirBatchRunner {
             String objectName = getObjectName(gcsBlobPath);
             byte[] input = storage.readAllBytes(bucketName, objectName);
             String jsonContent = new String(input);
-            JsonObject jsonObject = gson.fromJson(jsonContent, JsonObject.class);
-            LOG.info("content of " + gcsBlobPath + " as follows");
-            LOG.info("jsonContent " + jsonContent);
-            LOG.info("gson.toJson " + gson.toJson(jsonObject));
-
-            context.output(gson.toJson(jsonObject));
+            context.output(jsonContent);
         }
     }
 
     static class WriteFnOutput extends DoFn<String, String> {
+        private String outputDirectory;
+        public WriteFnOutput(String outputDirectory) {
+            this.outputDirectory = outputDirectory;
+        }
 
         @ProcessElement
         public void processElement(ProcessContext context) {
             Storage storage = StorageOptions.newBuilder().build().getService();
             String json = context.element();
-            String outputFolder = "gs://omop_test/omop/output/";
-            String bucketName = getBucketName(outputFolder);
-            String folderPath = getObjectName(outputFolder);
+            String bucketName = getBucketName(outputDirectory);
+            String folderPath = getObjectName(outputDirectory);
 
             BlobId blobId = BlobId.of(bucketName, folderPath + System.currentTimeMillis() + ".json");
             BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
@@ -228,25 +213,25 @@ public class OmopToFhirBatchRunner {
 
 
     /**
-     * Map the given study to a FHIR ImagingStudy resource.
+     * Map the given OMOP Data to a FHIR resource.
      *
-     * @param studyMetadata A PCollection of Strings containing successful read operations.
+     * @param omopData A PCollection of Strings containing OMOP Data.
      * @param options       The pipeline configuration.
      * @return A PCollection of String containing successfully mapped FHIR resources.
      */
     private PCollection<String> mapOmopToFhirResource(
-            PCollection<String> studyMetadata, Options options) {
+            PCollection<String> omopData, Options options) {
 
-        MappingFn<HclsApiOmopMappableMessage> mappingFn =
+        MappingFn<GcsOmopMappableMessage> mappingFn =
                 MappingFn.of(options.getMappingPath(), false);
 
-        PCollectionTuple mapOmopStudyToFhirBundleRequest =
-                studyMetadata
+        PCollectionTuple mapOmopToFhirBundleRequest =
+                omopData
                         .apply(ParDo.of(new CreateMappingFnInput()))
                         .apply(
-                                MapElements.into(TypeDescriptor.of(HclsApiOmopMappableMessage.class))
-                                        .via(HclsApiOmopMappableMessage::from))
-                        .setCoder(HclsApiOmopMappableMessageCoder.of())
+                                MapElements.into(TypeDescriptor.of(GcsOmopMappableMessage.class))
+                                        .via(GcsOmopMappableMessage::from))
+                        .setCoder(GcsOmopMappableMessageCoder.of())
                         .apply(
                                 "MapMessages",
                                 ParDo.of(mappingFn)
@@ -254,7 +239,7 @@ public class OmopToFhirBatchRunner {
                                                 MappingFn.MAPPING_TAG, TupleTagList.of(ErrorEntry.ERROR_ENTRY_TAG)));
 
         PCollection<ErrorEntry> mappingError =
-                mapOmopStudyToFhirBundleRequest.get(ErrorEntry.ERROR_ENTRY_TAG);
+                mapOmopToFhirBundleRequest.get(ErrorEntry.ERROR_ENTRY_TAG);
         mappingError
                 .apply(
                         "SerializeMappingErrors",
@@ -275,7 +260,7 @@ public class OmopToFhirBatchRunner {
                                 .withWindowedWrites()
                                 .withNumShards(options.getErrorLogShardNum()));
 
-        return mapOmopStudyToFhirBundleRequest
+        return mapOmopToFhirBundleRequest
                 .get(MappingFn.MAPPING_TAG)
                 .setCoder(MappedFhirMessageWithSourceTimeCoder.of())
                 .apply(MapElements.into(TypeDescriptors.strings()).via(MappingOutput::getOutput));
@@ -321,7 +306,7 @@ public class OmopToFhirBatchRunner {
         Options options = PipelineOptionsFactory.fromArgs(args).withValidation().as(Options.class);
         Pipeline pipeline = Pipeline.create(options);
 
-        PCollection<String> studyMetadata = pipeline
+        PCollection<String> omopData = pipeline
                 .apply("MatchFile(s)", FileIO.match().filepattern(options.getInputFilePattern()))
                 .apply("Reading matching files", FileIO.readMatches())
                 .apply("Create PCollection",
@@ -329,13 +314,12 @@ public class OmopToFhirBatchRunner {
                                 .via(
                                         (FileIO.ReadableFile file) -> {
                                             String fileName = file.getMetadata().resourceId().toString();
-//                                            System.out.println("Fanning out files -> " + fileName);
                                             return fileName;
                                         }));
 
         PCollection<String> fhirResource =
-                runner.mapOmopToFhirResource(studyMetadata, options)
-                        .apply("write to bucket", ParDo.of(new WriteFnOutput()));
+                runner.mapOmopToFhirResource(omopData, options)
+                        .apply("Write to Bucket", ParDo.of(new WriteFnOutput(options.getOutputDirectory())));
         runner.writeToFhirStore(fhirResource, options);
 
         pipeline.run();

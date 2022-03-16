@@ -14,33 +14,27 @@
 package com.google.cloud.healthcare.etl.model.mapping;
 
 import org.apache.beam.sdk.coders.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-/** Coder for {@link HclsApiOmopMappableMessage}. */
-public class HclsApiOmopMappableMessageCoder extends CustomCoder<HclsApiOmopMappableMessage> {
-  private static final Logger LOG = LoggerFactory.getLogger(HclsApiOmopMappableMessageCoder.class);
+/** Coder for {@link GcsOmopMappableMessage}. */
+public class GcsOmopMappableMessageCoder extends CustomCoder<GcsOmopMappableMessage> {
   private static final NullableCoder<String> STRING_CODER =
       NullableCoder.of((Coder) StringUtf8Coder.of());
 
-  public static HclsApiOmopMappableMessageCoder of() {
-    return new HclsApiOmopMappableMessageCoder();
+  public static GcsOmopMappableMessageCoder of() {
+    return new GcsOmopMappableMessageCoder();
   }
 
-  public void encode(HclsApiOmopMappableMessage value, OutputStream outStream)
+  public void encode(GcsOmopMappableMessage value, OutputStream outStream)
       throws CoderException, IOException {
-    LOG.info("HclsApiOmopMappableMessage.getData() "+value.getData());
     STRING_CODER.encode(value.getData(), outStream);
   }
 
-  public HclsApiOmopMappableMessage decode(InputStream inStream)
+  public GcsOmopMappableMessage decode(InputStream inStream)
       throws CoderException, IOException {
     String data = STRING_CODER.decode(inStream);
-    LOG.info("HclsApiOmopMappableMessage.decode() "+data);
-    return new HclsApiOmopMappableMessage(data);
+    return new GcsOmopMappableMessage(data);
   }
 }
