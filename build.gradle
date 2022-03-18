@@ -110,5 +110,11 @@ clean {
 task buildDeps(type: Exec) {
     inputs.dir('deps')
     outputs.file('lib/libwhistler.so')
+    // uncomment following command to compile go code and dataflow code in one go
     commandLine './build_deps.sh', '--work_dir', file('build/tmp/build_deps').absolutePath, '--output_dir', file('lib').absolutePath
+
+    // uncomment following command to copy artifact from GCS bucket 'omop_test', but to publish go code artifact to bucket, please run following code:
+    // to compile go: ./build_deps_to_bucket.sh --work_dir build/tmp/build_deps --output_bucket omop_test
+
+//    commandLine './download_deps.sh', '--bucket', 'omop_test', '--output_dir', file('lib').absolutePath
 }
