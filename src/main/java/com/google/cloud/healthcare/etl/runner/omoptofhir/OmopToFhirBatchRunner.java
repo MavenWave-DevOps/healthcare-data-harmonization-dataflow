@@ -286,9 +286,18 @@ public class OmopToFhirBatchRunner {
                         MapElements.into(TypeDescriptors.strings())
                                 .via(resp -> bundleErrorConverter.apply(resp).toString()))
                 .apply(
+                        Window.<String>into(FixedWindows.of(ERROR_LOG_WINDOW_SIZE))
+                                .triggering(
+                                        Repeatedly.forever(
+                                                AfterProcessingTime.pastFirstElementInPane()
+                                                        .plusDelayOf(ERROR_LOG_WINDOW_SIZE)))
+                                .withAllowedLateness(Duration.ZERO)
+                                .discardingFiredPanes())
+                .apply(
                         "RecordWriteErrors",
                         TextIO.write()
                                 .to(options.getWriteErrorPath())
+                                .withWindowedWrites()
                                 .withNumShards(options.getErrorLogShardNum()));
     }
 
