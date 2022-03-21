@@ -39,7 +39,7 @@ rm -rf "${WORK_DIR}"
 mkdir -p "${WORK_DIR}"
 
 # At this point, we require OpenJDK 11.
-readonly JNI_DIR="/usr/local/opt/openjdk@11/include"
+readonly JNI_DIR="/usr/lib/jvm/java-11-openjdk-amd64/include"
 readonly JNI_DIR_LINUX="/usr/lib/jvm/java-11-openjdk-amd64/include/linux"
 echo $JNI_DIR
 # Data harmonization repo.
