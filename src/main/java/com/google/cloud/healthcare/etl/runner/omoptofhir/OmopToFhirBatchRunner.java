@@ -289,7 +289,6 @@ public class OmopToFhirBatchRunner {
                         "RecordWriteErrors",
                         TextIO.write()
                                 .to(options.getWriteErrorPath())
-                                .withWindowedWrites()
                                 .withNumShards(options.getErrorLogShardNum()));
     }
 
