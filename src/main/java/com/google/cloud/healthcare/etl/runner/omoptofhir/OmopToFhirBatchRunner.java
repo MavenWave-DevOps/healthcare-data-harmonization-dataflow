@@ -123,6 +123,18 @@ public class OmopToFhirBatchRunner {
 
         void setFhirStore(String param1String);
 
+        @Description("The path that is used to write temp files before import.")
+        @Required
+        String getFhirImportGcsTempPath();
+
+        void setFhirImportGcsTempPath(String fhirImportGcsTempPath);
+
+        @Description("The path that is used to write dead/error files while import, which failed to import.")
+        @Required
+        String getFhirImportGcsDeadLetterPath();
+
+        void setFhirImportGcsDeadLetterPath(String fhirImportGcsDeadLetterPath);
+
         @Description("The number of shards when writing errors to GCS.")
         @Default.Integer(10)
         Integer getErrorLogShardNum();
@@ -149,6 +161,7 @@ public class OmopToFhirBatchRunner {
 
     static class WriteFnOutput extends DoFn<String, String> {
         private String outputDirectory;
+
         public WriteFnOutput(String outputDirectory) {
             this.outputDirectory = outputDirectory;
         }
@@ -216,7 +229,7 @@ public class OmopToFhirBatchRunner {
      * Map the given OMOP Data to a FHIR resource.
      *
      * @param omopData A PCollection of Strings containing OMOP Data.
-     * @param options       The pipeline configuration.
+     * @param options  The pipeline configuration.
      * @return A PCollection of String containing successfully mapped FHIR resources.
      */
     private PCollection<String> mapOmopToFhirResource(
@@ -275,7 +288,7 @@ public class OmopToFhirBatchRunner {
     private void writeToFhirStore(PCollection<String> fhirResource, Options options) {
         FhirIO.Write.Result writeResults =
                 fhirResource
-                        .apply("WriteFHIRBundles", FhirIO.Write.executeBundles(options.getFhirStore()));
+                        .apply("WriteFHIRBundles", FhirIO.Write.fhirStoresImport(options.getFhirStore(), options.getFhirImportGcsTempPath(), options.getFhirImportGcsDeadLetterPath(), FhirIO.Import.ContentStructure.BUNDLE));
 
         PCollection<HealthcareIOError<String>> failedWrites = writeResults.getFailedBodies();
 
