@@ -124,13 +124,11 @@ public class OmopToFhirBatchRunner {
         void setFhirStore(String param1String);
 
         @Description("The path that is used to write temp files before import.")
-        @Required
         String getFhirImportGcsTempPath();
 
         void setFhirImportGcsTempPath(String fhirImportGcsTempPath);
 
         @Description("The path that is used to write dead/error files while import, which failed to import.")
-        @Required
         String getFhirImportGcsDeadLetterPath();
 
         void setFhirImportGcsDeadLetterPath(String fhirImportGcsDeadLetterPath);
@@ -286,9 +284,16 @@ public class OmopToFhirBatchRunner {
      * @param options      The pipeline configuration.
      */
     private void writeToFhirStore(PCollection<String> fhirResource, Options options) {
-        FhirIO.Write.Result writeResults =
-                fhirResource
-                        .apply("WriteFHIRBundles", FhirIO.Write.fhirStoresImport(options.getFhirStore(), options.getFhirImportGcsTempPath(), options.getFhirImportGcsDeadLetterPath(), FhirIO.Import.ContentStructure.BUNDLE));
+        FhirIO.Write.Result writeResults = null;
+        if(options.getFhirImportGcsDeadLetterPath() != null && !options.getFhirImportGcsDeadLetterPath().trim().equals("")){
+            writeResults =
+                    fhirResource
+                            .apply("ImportFHIRBundles", FhirIO.Write.fhirStoresImport(options.getFhirStore(), options.getFhirImportGcsTempPath(), options.getFhirImportGcsDeadLetterPath(), FhirIO.Import.ContentStructure.BUNDLE));
+        } else {
+            writeResults =
+                    fhirResource
+                            .apply("ExecuteFHIRBundles", FhirIO.Write.executeBundles(options.getFhirStore()));
+        }
 
         PCollection<HealthcareIOError<String>> failedWrites = writeResults.getFailedBodies();
 

@@ -54,13 +54,15 @@
       "name": "fhirImportGcsTempPath",
       "label": "FHIR Import Gcs Temporary Path",
       "helpText": "The path that is used to write temp files before import.",
-      "paramType": "GCS_WRITE_FOLDER"
+      "paramType": "GCS_WRITE_FOLDER",
+      "isOptional": true
     },
     {
       "name": "fhirImportGcsDeadLetterPath",
       "label": "FHIR Import Gcs Dead Letter Path",
       "helpText": "The path that is used to write dead/error files while import, which failed to import.",
-      "paramType": "GCS_WRITE_FOLDER"
+      "paramType": "GCS_WRITE_FOLDER",
+      "isOptional": true
     }
   ]
 }
