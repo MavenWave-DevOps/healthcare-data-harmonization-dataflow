@@ -336,8 +336,8 @@ public class OmopToFhirBatchRunner {
                                         }));
 
         PCollection<String> fhirResource =
-                runner.mapOmopToFhirResource(omopData, options);
-//                        .apply("Write to Bucket", ParDo.of(new WriteFnOutput(options.getOutputDirectory())));
+                runner.mapOmopToFhirResource(omopData, options)
+                        .apply("Write to Bucket", ParDo.of(new WriteFnOutput(options.getOutputDirectory())));
         runner.writeToFhirStore(fhirResource, options);
 
         pipeline.run();
