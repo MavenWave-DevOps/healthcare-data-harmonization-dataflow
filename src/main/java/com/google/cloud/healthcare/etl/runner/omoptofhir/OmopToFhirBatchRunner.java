@@ -340,6 +340,6 @@ public class OmopToFhirBatchRunner {
                         .apply("Write to Bucket", ParDo.of(new WriteFnOutput(options.getOutputDirectory())));
         runner.writeToFhirStore(fhirResource, options);
 
-        pipeline.run().waitUntilFinish();
+        pipeline.run();
     }
 }
