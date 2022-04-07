@@ -118,7 +118,6 @@ public class OmopToFhirBatchRunner {
         @Description(
                 "The target FHIR Store to write data to, must be of the full format: "
                         + "projects/project_id/locations/location/datasets/dataset_id/fhirStores/fhir_store_id")
-        @Required
         String getFhirStore();
 
         void setFhirStore(String param1String);
@@ -338,7 +337,10 @@ public class OmopToFhirBatchRunner {
         PCollection<String> fhirResource =
                 runner.mapOmopToFhirResource(omopData, options)
                         .apply("Write to Bucket", ParDo.of(new WriteFnOutput(options.getOutputDirectory())));
-        runner.writeToFhirStore(fhirResource, options);
+
+        if(options.getFhirStore() != null && !options.getFhirStore().trim().equals("")) {
+            runner.writeToFhirStore(fhirResource, options);
+        }
 
         pipeline.run();
     }

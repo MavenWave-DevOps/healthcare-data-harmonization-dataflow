@@ -48,7 +48,8 @@
       "name": "fhirStore",
       "label": "FHIR Store",
       "helpText": "The target FHIR Store to write data to, must be of the full format: projects/project_id/locations/location/datasets/dataset_id/fhirStores/fhir_store_id",
-      "paramType": "TEXT"
+      "paramType": "TEXT",
+      "isOptional": true
     },
     {
       "name": "fhirImportGcsTempPath",
