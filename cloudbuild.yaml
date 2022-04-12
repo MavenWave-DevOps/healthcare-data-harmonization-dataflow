@@ -1,0 +1,18 @@
+steps:
+  - name: 'us-central1-docker.pkg.dev/mw-data-analytics-sandbox/hdh-image-repo/hdhbuildcontainer@sha256:1c8d39e2e5745e6dd3500dd258551c028cc4b89430a15d70240095f2469228cf'
+    id: 'build'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        gradle wrapper --gradle-version 6.7.1
+        ./gradlew shadowJar -PmainClass=com.google.cloud.healthcare.etl.runner.omoptofhir.OmopToFhirBatchRunner
+        gcloud dataflow flex-template build $_TEMPLATE_PATH --image-gcr-path "$_TEMPLATE_IMAGE" --sdk-language "JAVA" --flex-template-base-image JAVA11 --metadata-file "omop_fhir_dataflow_metadata.json" --jar "build/libs/converter-0.1.0-all.jar" --env FLEX_TEMPLATE_JAVA_MAIN_CLASS="com.google.cloud.healthcare.etl.runner.omoptofhir.OmopToFhirBatchRunner"
+
+substitutions:
+  _TEMPLATE_IMAGE: us-central1-docker.pkg.dev/hdcmendsfhird/dockerfhird/omap-to-fhir:latest
+  _TEMPLATE_PATH: gs://hdcmendsfhird/dataflow-templates/omop-to-fhir
+timeout: 1500s
+options:
+  logging: CLOUD_LOGGING_ONLY
+

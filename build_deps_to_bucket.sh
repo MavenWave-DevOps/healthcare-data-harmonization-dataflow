@@ -3,18 +3,18 @@
 set -u -e
 
 WORK_DIR=""
-OUTPUT_DIR=""
+OUTPUT_BUCKET=""
 
 print_usage() {
   echo "Usage:"
-  echo "  build_deps.sh --work_dir <WORK DIR> --output_dir <OUTPUT DIR>"
+  echo "  build_deps.sh --work_dir <WORK DIR> --output_bucket <OUTPUT BUCKET>"
 }
 
 while (( "$#" )); do
   if [[ "$1" == "--work_dir" ]]; then
     WORK_DIR="$2"
-  elif [[ "$1" == "--output_dir" ]]; then
-    OUTPUT_DIR="$2"
+  elif [[ "$1" == "--output_bucket" ]]; then
+    OUTPUT_BUCKET="$2"
   else
     echo "Error: unknown flag $1."
     print_usage
@@ -28,8 +28,8 @@ if [[ -z "${WORK_DIR}" ]]; then
   print_usage
   exit 1
 fi
-if [[ -z "${OUTPUT_DIR}" ]]; then
-  echo "Error: --output_dir is not specified."
+if [[ -z "${OUTPUT_BUCKET}" ]]; then
+  echo "Error: --output_bucket is not specified."
   print_usage
   exit 1
 fi
@@ -41,9 +41,9 @@ mkdir -p "${WORK_DIR}"
 # At this point, we require OpenJDK 11.
 readonly JNI_DIR="/usr/lib/jvm/java-11-openjdk-amd64/include"
 readonly JNI_DIR_LINUX="/usr/lib/jvm/java-11-openjdk-amd64/include/linux"
-echo $JNI_DIR
+
 # Data harmonization repo.
-readonly DH_REPO="${DH_REPO:-https://github.com/Mavenwave-DevOps/healthcare-data-harmonization.git}"
+readonly DH_REPO="${DH_REPO:-https://github.com/GoogleCloudPlatform/healthcare-data-harmonization.git}"
 
 if [[ ! -d "${JNI_DIR}" || ! -d "${JNI_DIR_LINUX}" ]]; then
   echo "Please make sure OpenJDK 11 is installed. On Debian/Ubuntu, run: sudo apt install openjdk-11-jdk"
@@ -93,7 +93,8 @@ go get github.com/GoogleCloudPlatform/healthcare-data-harmonization/mapping_engi
 go get github.com/GoogleCloudPlatform/healthcare-data-harmonization/mapping_engine/transform
 go get github.com/GoogleCloudPlatform/healthcare-data-harmonization/mapping_language/transpiler@v0.0.0-20210315190620-fb0f05814962
 go get google.golang.org/protobuf/encoding/prototext
-go build -ldflags "-s -w" -o "${OUTPUT_DIR}/libwhistler.so" -buildmode=c-shared
+go build -ldflags "-s -w" -o "libwhistler.so" -buildmode=c-shared
+gsutil cp libwhistler.so gs://${OUTPUT_BUCKET}/lib/
 
 # Clean up work directory
 echo "Cleaning up temporary work directory..."

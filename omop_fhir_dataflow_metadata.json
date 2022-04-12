@@ -1,0 +1,69 @@
+{
+  "name": "Dataflow OMOP to FHIR converter template",
+  "description": "It reads OMOP data from storage, converted to FHIR data using whistle mapping and uploaded to FHIR R4",
+  "parameters": [
+    {
+      "name": "inputFilePattern",
+      "label": "Input File Pattern",
+      "helpText": "The input file pattern to read from (e.g. gs://bucket-name/*.json)",
+      "paramType": "GCS_READ_FILE"
+    },
+    {
+      "name": "mappingPath",
+      "label": "Mapping Path",
+      "helpText": "The path to the mapping configurations. The path will be treated as a GCS path if the\n path starts with the GCS scheme (\"gs\"), otherwise a local file. Please see: \n \"https://github.com/GoogleCloudPlatform/healthcare-data-harmonization/blob/baa4e0c7849413f7b44505a8410ee7f52745427a/mapping_configs/README.md\"\n for more details on the mapping configuration structure.",
+      "paramType": "GCS_READ_FILE"
+    },
+    {
+      "name": "outputDirectory",
+      "label": "Output Directory",
+      "helpText": "The output location to write to (e.g. gs://bucket-name/fhir/)",
+      "paramType": "GCS_WRITE_FOLDER"
+    },
+    {
+      "name": "readErrorPath",
+      "label": "Read Error Path",
+      "helpText": "The path that is used to record all read errors. The path will be treated as a GCS path if the path starts with the GCS scheme (\"gs\"), otherwise a local file.",
+      "paramType": "GCS_WRITE_FILE"
+    },
+    {
+      "name": "writeErrorPath",
+      "label": "Write Error Path",
+      "helpText": "The path that is used to record all write errors. The path will be treated as a GCS path if the path starts with the GCS scheme (\"gs\"), otherwise a local file.",
+      "paramType": "GCS_WRITE_FILE"
+    },
+    {
+      "name": "mappingErrorPath",
+      "label": "Mapping Error Path",
+      "helpText": "The path that is used to record all mapping errors. The path will be treated as a GCS path if the path starts with the GCS scheme (\"gs\"), otherwise a local file.",
+      "paramType": "GCS_WRITE_FILE"
+    },
+    {
+      "name": "errorLogShardNum",
+      "label": "Error Log Shard Number",
+      "helpText": "The number of shards when writing errors to GCS.",
+      "paramType": "TEXT"
+    },
+    {
+      "name": "fhirStore",
+      "label": "FHIR Store",
+      "helpText": "The target FHIR Store to write data to, must be of the full format: projects/project_id/locations/location/datasets/dataset_id/fhirStores/fhir_store_id",
+      "paramType": "TEXT",
+      "isOptional": true
+    },
+    {
+      "name": "fhirImportGcsTempPath",
+      "label": "FHIR Import Gcs Temporary Path",
+      "helpText": "The path that is used to write temp files before import.",
+      "paramType": "GCS_WRITE_FOLDER",
+      "isOptional": true
+    },
+    {
+      "name": "fhirImportGcsDeadLetterPath",
+      "label": "FHIR Import Gcs Dead Letter Path",
+      "helpText": "The path that is used to write dead/error files while import, which failed to import.",
+      "paramType": "GCS_WRITE_FOLDER",
+      "isOptional": true
+    }
+  ]
+}
